@@ -1576,9 +1576,7 @@ class Csw3(object):
                 self.parent.context.md_core_model['mappings']['pycsw:Links'])
 
                 if rlinks:
-                    links = rlinks.split('^')
-                    for link in links:
-                        linkset = link.split(',')
+                    for linkset in util.link_splitter(rlinks):
                         etree.SubElement(record,
                         util.nspath_eval('dct:references',
                         self.parent.context.namespaces),

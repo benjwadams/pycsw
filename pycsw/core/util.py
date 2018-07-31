@@ -38,6 +38,7 @@ import time
 
 import six
 import csv
+import re
 from six.moves.urllib.request import Request, urlopen
 from six.moves.urllib.parse import urlparse
 from shapely.wkt import loads
