@@ -35,7 +35,6 @@ import logging
 import uuid
 from six.moves import range
 from six.moves.urllib.parse import urlparse
-
 from geolinks import sniff_link
 from owslib.util import build_get_url
 from shapely.wkt import loads
@@ -1370,8 +1369,8 @@ def _parse_iso(context, repos, exml):
         for link in dist_links:
             if link.url is not None and link.protocol is None:  # take a best guess
                 link.protocol = sniff_link(link.url)
-            linkstr = '%s,%s,%s,%s' % \
-            (link.name, link.description, link.protocol, link.url)
+            linkstr = util.link_helper(link.name, link.description,
+                                       link.protocol, link.url)
             links.append(linkstr)
 
     try:
@@ -1381,14 +1380,14 @@ def _parse_iso(context, repos, exml):
                 for sops in sident.operations:
                     for scpt in sops['connectpoint']:
                         LOGGER.debug('adding srv link %s', scpt.url)
-                        linkstr = '%s,%s,%s,%s' % \
-                        (scpt.name, scpt.description, scpt.protocol, scpt.url)
+                        linkstr = util.link_helper(scpt.name, scpt.description,
+                                                   scpt.protocol, scpt.url)
                         links.append(linkstr)
     except Exception as err:  # srv: identification does not exist
         LOGGER.exception('no srv:SV_ServiceIdentification links found')
 
     if len(links) > 0:
-        _set(context, recobj, 'pycsw:Links', '^'.join(links))
+        _set(context, recobj, 'pycsw:Links', ''.join(links))
 
     if bbox is not None:
         try:
@@ -1450,15 +1449,15 @@ def _parse_dc(context, repos, exml):
     _set(context, recobj, 'pycsw:Source', md.source)
 
     for ref in md.references:
-        tmp = ',,%s,%s' % (ref['scheme'], ref['url'])
+        tmp = util.link_helper('', '', ref['scheme'], ref['url'])
         links.append(tmp)
     for uri in md.uris:
-        tmp = '%s,%s,%s,%s' % \
-        (uri['name'], uri['description'], uri['protocol'], uri['url'])
+        tmp = util.link_helper(uri['name'], uri['description'], uri['protocol'],
+                          uri['url'])
         links.append(tmp)
 
     if len(links) > 0:
-        _set(context, recobj, 'pycsw:Links', '^'.join(links))
+        _set(context, recobj, 'pycsw:Links', ''.join(links))
 
     if bbox is not None:
         try:

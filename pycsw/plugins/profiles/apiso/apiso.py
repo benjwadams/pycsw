@@ -659,8 +659,7 @@ class APISO(profile.Profile):
             transopts = etree.SubElement(distinfo2, util.nspath_eval('gmd:transferOptions', self.namespaces))
             dtransopts = etree.SubElement(transopts, util.nspath_eval('gmd:MD_DigitalTransferOptions', self.namespaces))
 
-            for link in rlinks.split('^'):
-                linkset = link.split(',')
+            for linkset in util.link_splitter(rlinks):
                 online = etree.SubElement(dtransopts, util.nspath_eval('gmd:onLine', self.namespaces))
                 online2 = etree.SubElement(online, util.nspath_eval('gmd:CI_OnlineResource', self.namespaces))
 

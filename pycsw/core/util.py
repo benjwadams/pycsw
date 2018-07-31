@@ -37,6 +37,7 @@ import logging
 import time
 
 import six
+import csv
 from six.moves.urllib.request import Request, urlopen
 from six.moves.urllib.parse import urlparse
 from shapely.wkt import loads
@@ -180,7 +181,7 @@ def wkt2geom(ewkt, bounds=True):
     Returns
     -------
     shapely.geometry.base.BaseGeometry or tuple
-        Depending on the value of the ``bounds`` parameter, returns either 
+        Depending on the value of the ``bounds`` parameter, returns either
         the shapely geometry instance or a tuple with the bounding box.
 
     References
@@ -263,6 +264,32 @@ def getqattr(obj, name):
         pass
     return result
 
+
+def link_helper(*args):
+    """Helper function to generate links and handle escaping with backslash"""
+    output_obj = six.StringIO()
+    csv_w = csv.writer(output_obj, lineterminator='^', quoting=csv.QUOTE_NONE,
+                       quotechar=None, escapechar='\\')
+    csv_w.writerow(args)
+    output_obj.seek(0)
+    return output_obj.read()
+
+
+def link_splitter(link_str):
+    """Safer link splitting function which takes into account escaping rules with
+        backslashes"""
+    # python's csv.reader currently does not support custom line terminators,
+    # so we have to do some substitution to transform the '^' separator to
+    #  newline
+
+    # first escape any newlines already present
+    nl_replace = link_str.replace("\n", "\\\n")
+    # next, transform any carets that aren't escaped themselves (odd number of backslashes)
+    # into newlines
+    caret_replace = re.sub(r'(?<!\\)((?:(?:\\){2})*)\^', r"\1\n", nl_replace)
+    cr = csv.reader(six.StringIO(caret_replace), escapechar='\\',
+                    quoting=csv.QUOTE_NONE, quotechar=None)
+    return [linkset for linkset in cr]
 
 def http_request(method, url, request=None, timeout=30):
     """Perform HTTP request"""
