@@ -150,8 +150,7 @@ def write_record(recobj, esn, context, url=None):
     # links
     rlinks = util.getqattr(recobj, context.md_core_model['mappings']['pycsw:Links'])
     if rlinks:
-        for link in rlinks.split('^'):
-            linkset = link.split(',')
+        for linkset in util.link_splitter(rlinks):
             etree.SubElement(citeinfo, 'onlink', type=linkset[2]).text = linkset[-1]
 
     # metd

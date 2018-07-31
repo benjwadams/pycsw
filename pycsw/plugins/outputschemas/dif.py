@@ -145,9 +145,8 @@ def write_record(result, esn, context, url=None):
 
     rlinks = util.getqattr(result, context.md_core_model['mappings']['pycsw:Links'])
     if rlinks:
-        for link in rlinks.split('^'):
-            linkset = link.split(',')
-       
+        for linkset in util.link_splitter(rlinks):
+
             url2 = etree.SubElement(node, util.nspath_eval('dif:Related_URL', NAMESPACES))
 
             urltype = etree.SubElement(url2, util.nspath_eval('dif:URL_Content_Type', NAMESPACES))

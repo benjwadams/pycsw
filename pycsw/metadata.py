@@ -73,7 +73,7 @@ def parse_record(context, record, repos=None,
     elif mtype == 'http://www.opengis.net/wms':  # WMS
         LOGGER.debug('WMS detected, fetching via OWSLib')
         return _parse_wms(context, repos, record, identifier)
-     
+
     elif mtype == 'http://www.opengis.net/wps/1.0.0':  # WPS
         LOGGER.debug('WPS detected, fetching via OWSLib')
         return [_parse_wps(context, repos, record, identifier)]
@@ -240,7 +240,7 @@ def _parse_waf(context, repos, record, identifier):
         tree = etree.fromstring(content, parser=parser)
     except Exception as err:
         raise Exception('Could not parse WAF: %s' % str(err))
-        
+
     up = urlparse(record)
     links = []
 
@@ -326,8 +326,8 @@ def _parse_wms(context, repos, record, identifier):
     _set(context, serviceobj, 'pycsw:Links', '^'.join(links))
     _set(context, serviceobj, 'pycsw:XML', caps2iso(serviceobj, md, context))
 
-    recobjs.append(serviceobj) 
-         
+    recobjs.append(serviceobj)
+
     # generate record foreach layer
 
     LOGGER.debug('Harvesting %d WMS layers' % len(md.contents))
@@ -886,7 +886,7 @@ def _parse_iso(context, repos, exml):
 
         if len(md.identification.resourcelanguage) > 0:
             _set(context, recobj, 'pycsw:ResourceLanguage', md.identification.resourcelanguage[0])
- 
+
         if hasattr(md.identification, 'bbox'):
             bbox = md.identification.bbox
         else:
@@ -911,16 +911,16 @@ def _parse_iso(context, repos, exml):
             all_orgs = set([item.organization for item in md.identification.contributor if hasattr(item, 'organization') and item.organization is not None])
             _set(context, recobj, 'pycsw:Contributor', ';'.join(all_orgs))
 
-        if (hasattr(md.identification, 'contact') and 
+        if (hasattr(md.identification, 'contact') and
             len(md.identification.contact) > 0):
             all_orgs = set([item.organization for item in md.identification.contact if hasattr(item, 'organization') and item.organization is not None])
             _set(context, recobj, 'pycsw:OrganizationName', ';'.join(all_orgs))
 
         if len(md.identification.securityconstraints) > 0:
-            _set(context, recobj, 'pycsw:SecurityConstraints', 
+            _set(context, recobj, 'pycsw:SecurityConstraints',
             md.identification.securityconstraints[0])
         if len(md.identification.accessconstraints) > 0:
-            _set(context, recobj, 'pycsw:AccessConstraints', 
+            _set(context, recobj, 'pycsw:AccessConstraints',
             md.identification.accessconstraints[0])
         if len(md.identification.otherconstraints) > 0:
             _set(context, recobj, 'pycsw:OtherConstraints', md.identification.otherconstraints[0])
@@ -958,7 +958,7 @@ def _parse_iso(context, repos, exml):
         _set(context, recobj, 'pycsw:ServiceTypeVersion', md.serviceidentification.version)
 
         _set(context, recobj, 'pycsw:CouplingType', md.serviceidentification.couplingtype)
-   
+
     service_types = []
     for smd in md.identificationinfo:
         if smd.identtype == 'service' and smd.type is not None:
@@ -966,14 +966,14 @@ def _parse_iso(context, repos, exml):
 
     _set(context, recobj, 'pycsw:ServiceType', ','.join(service_types))
 
-        #if len(md.serviceidentification.operateson) > 0: 
-        #    _set(context, recobj, 'pycsw:operateson = VARCHAR(32), 
-        #_set(context, recobj, 'pycsw:operation VARCHAR(32), 
-        #_set(context, recobj, 'pycsw:operatesonidentifier VARCHAR(32), 
-        #_set(context, recobj, 'pycsw:operatesoname VARCHAR(32), 
+        #if len(md.serviceidentification.operateson) > 0:
+        #    _set(context, recobj, 'pycsw:operateson = VARCHAR(32),
+        #_set(context, recobj, 'pycsw:operation VARCHAR(32),
+        #_set(context, recobj, 'pycsw:operatesonidentifier VARCHAR(32),
+        #_set(context, recobj, 'pycsw:operatesoname VARCHAR(32),
 
 
-    if hasattr(md.identification, 'dataquality'):     
+    if hasattr(md.identification, 'dataquality'):
         _set(context, recobj, 'pycsw:Degree', md.dataquality.conformancedegree)
         _set(context, recobj, 'pycsw:Lineage', md.dataquality.lineage)
         _set(context, recobj, 'pycsw:SpecificationTitle', md.dataquality.specificationtitle)
@@ -999,8 +999,8 @@ def _parse_iso(context, repos, exml):
         for link in dist_links:
             if link.url is not None and link.protocol is None:  # take a best guess
                 link.protocol = sniff_link(link.url)
-            linkstr = '%s,%s,%s,%s' % \
-            (link.name, link.description, link.protocol, link.url)
+            linkstr = util.link_helper(link.name, link.description,
+                                       link.protocol, link.url)
             links.append(linkstr)
 
     try:
@@ -1010,14 +1010,14 @@ def _parse_iso(context, repos, exml):
                 for sops in sident.operations:
                     for scpt in sops['connectpoint']:
                         LOGGER.debug('adding srv link %s', scpt.url)
-                        linkstr = '%s,%s,%s,%s' % \
-                        (scpt.name, scpt.description, scpt.protocol, scpt.url)
+                        linkstr = util.link_helper(scpt.name, scpt.description,
+                                                   scpt.protocol, scpt.url)
                         links.append(linkstr)
     except Exception as err:  # srv: identification does not exist
         LOGGER.debug('no srv:SV_ServiceIdentification links found')
 
     if len(links) > 0:
-        _set(context, recobj, 'pycsw:Links', '^'.join(links))
+        _set(context, recobj, 'pycsw:Links', ''.join(links))
 
     if bbox is not None:
         try:
@@ -1079,15 +1079,15 @@ def _parse_dc(context, repos, exml):
     _set(context, recobj, 'pycsw:Source', md.source)
 
     for ref in md.references:
-        tmp = ',,%s,%s' % (ref['scheme'], ref['url'])
+        tmp = util.link_helper('', '', ref['scheme'], ref['url'])
         links.append(tmp)
     for uri in md.uris:
-        tmp = '%s,%s,%s,%s' % \
-        (uri['name'], uri['description'], uri['protocol'], uri['url'])
+        tmp = util.link_helper(uri['name'], uri['description'], uri['protocol'],
+                               uri['url'])
         links.append(tmp)
 
     if len(links) > 0:
-        _set(context, recobj, 'pycsw:Links', '^'.join(links))
+        _set(context, recobj, 'pycsw:Links', ''.join(links))
 
     if bbox is not None:
         try:
